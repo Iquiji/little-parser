@@ -18,6 +18,7 @@ impl Parser {
         }
     }
     fn current(&self) -> Token {
+        println!("Self: {:?},{:?}",self,self.current_type());
         self.tokens[self.token_idx].clone()
     }
     fn current_type(&self) -> scanner::ScannerTokenTypes {
@@ -98,20 +99,26 @@ impl Parser {
                                     panic!("Unexpected: '{:?}'", self.current());
                                 }
                                 self.advance();
+                                self.advance();
                                 while self.current_type()
                                     != scanner::ScannerTokenTypes::RightParantheses
                                 {
+                                    println!("let bindings: {:?}",bindings);
                                     if self.current_type() != scanner::ScannerTokenTypes::Identifier
                                     {
                                         panic!(
-                                            "Unexpected: '{:?}',Expected Identifier in Lambda",
+                                            "Unexpected: '{:?}',Expected Identifier in Let",
                                             self.current()
                                         );
                                     } else {
-                                        bindings.push((self.current().lexeme, self.re_expr()))
+                                        bindings.push((self.current().lexeme, {
+                                            self.advance();
+                                            self.re_expr()
+                                        }))
                                     }
                                     self.advance();
                                 }
+                                
                                 self.advance();
                                 let mut body = vec![];
                                 while self.current_type()
@@ -182,7 +189,11 @@ impl Parser {
             }
             scanner::ScannerTokenTypes::RightParantheses => todo!(),
             scanner::ScannerTokenTypes::Keyword(_) => todo!(),
-            scanner::ScannerTokenTypes::Identifier => todo!(),
+            scanner::ScannerTokenTypes::Identifier => {
+                let res = Expression::Identifier(self.current().lexeme);
+                self.advance();
+                return res;
+            },
             scanner::ScannerTokenTypes::String => {
                 let res = AtomTypes::String(self.current().lexeme);
                 self.advance();
