@@ -1,5 +1,5 @@
-use core::{panic, fmt};
-use std::{rc::Rc, fmt::Display};
+use core::{fmt, panic};
+use std::{fmt::Display, rc::Rc};
 
 use scanner::Token;
 
@@ -28,7 +28,7 @@ impl Parser {
     fn _next(&self) -> Token {
         self.tokens[self.token_idx + 1].clone()
     }
-    fn next_type(&self) -> scanner::ScannerTokenTypes {
+    fn _next_type(&self) -> scanner::ScannerTokenTypes {
         self.tokens[self.token_idx + 1].ttype.clone()
     }
     fn previous(&self) -> Token {
@@ -93,7 +93,7 @@ impl Parser {
             } else if self.accept_if(Keyword(Lambda)) {
                 // (lambda <formals> <body>) bzw. (lambda (x y ...) Expr...)
                 self.call_stack.push("Lambda".to_owned());
-                
+
                 self.expect_type(LeftParantheses);
                 let mut formals = vec![];
                 while self.accept_if(Identifier) {
@@ -187,7 +187,8 @@ impl Parser {
                 eprintln!("Experimental Expr first as arg");
                 let first_expr = self.re_expr();
                 if let Expression::Lambda(bindings, body) = first_expr {
-                    self.call_stack.push("Lambda as first in Parenthesised Expr".to_owned());
+                    self.call_stack
+                        .push("Lambda as first in Parenthesised Expr".to_owned());
 
                     let mut expr_to_call_with = vec![];
                     while self.current_type() != RightParantheses {
@@ -204,13 +205,14 @@ impl Parser {
                 }
                 // (((lambda ...) x y z) ...)
                 if let Expression::LambdaCall(to_call, args) = first_expr {
-                    self.call_stack.push("Lambda call as first in Paranthesised Expr".to_owned());
+                    self.call_stack
+                        .push("Lambda call as first in Paranthesised Expr".to_owned());
 
                     let mut expr_to_call_with = vec![];
                     while self.current_type() != RightParantheses {
                         expr_to_call_with.push(self.re_expr());
                     }
-                    
+
                     self.expect_type(RightParantheses);
 
                     self.call_stack.pop();
@@ -230,7 +232,8 @@ impl Parser {
             self.call_stack.pop();
             return Expression::Identifier(self.previous().lexeme);
         } else if self.accept_if(String) || self.accept_if(Boolean) || self.accept_if(Number) {
-            self.call_stack.push("String Boolean or Number first in Expr".to_owned());
+            self.call_stack
+                .push("String Boolean or Number first in Expr".to_owned());
 
             self.call_stack.pop();
             return Expression::Atom(match self.previous().ttype {
@@ -255,7 +258,11 @@ impl Parser {
             return Expression::Atom(atom_to_quote);
         }
 
-        panic!("End of Expression Parser!!! should be unreachable! current: {:?}, dump: {:?}",self.current() ,self);
+        panic!(
+            "End of Expression Parser!!! should be unreachable! current: {:?}, dump: {:?}",
+            self.current(),
+            self
+        );
     }
 
     fn re_atom(&mut self) -> AtomTypes {
@@ -314,59 +321,58 @@ impl Display for Expression {
             Expression::Lambda(formals, body) => {
                 write!(f, "Lambda def:\n").unwrap();
                 write!(f, "-formals:\n").unwrap();
-                for formal in formals{
-                    write!(f, "{} ",formal).unwrap();
+                for formal in formals {
+                    write!(f, "{} ", formal).unwrap();
                 }
                 write!(f, "-body:\n").unwrap();
-                for expr in body{
-                    write!(f, "     ->{}\n",expr).unwrap();
+                for expr in body {
+                    write!(f, "     ->{}\n", expr).unwrap();
                 }
                 write!(f, "\n")
-            },
+            }
             Expression::Cond(conds) => {
                 write!(f, "Cond:").unwrap();
                 write!(f, "-conds:").unwrap();
-                for expr in conds{
-                    write!(f, "     ->{} => {}",expr.0,expr.1).unwrap();
+                for expr in conds {
+                    write!(f, "     ->{} => {}", expr.0, expr.1).unwrap();
                 }
                 write!(f, "\n")
-            },
+            }
             Expression::Define(define_name, define_expr) => {
                 write!(f, "Define def:\n").unwrap();
-                write!(f, "-name: {}\n",define_name).unwrap();
+                write!(f, "-name: {}\n", define_name).unwrap();
 
                 write!(f, "-body:\n").unwrap();
-                write!(f, "     ->{}\n",define_expr).unwrap();
+                write!(f, "     ->{}\n", define_expr).unwrap();
                 write!(f, "\n")
-            },
+            }
             Expression::Let(bindings, body) => {
                 write!(f, "Let expr:\n").unwrap();
                 write!(f, "-formals:\n").unwrap();
-                for expr in bindings{
-                    write!(f, "     ->{} <= {}\n",expr.0,expr.1).unwrap();
+                for expr in bindings {
+                    write!(f, "     ->{} <= {}\n", expr.0, expr.1).unwrap();
                 }
                 write!(f, "-body:\n").unwrap();
-                for expr in body{
-                    write!(f, "     ->{}\n",expr).unwrap();
+                for expr in body {
+                    write!(f, "     ->{}\n", expr).unwrap();
                 }
                 write!(f, "\n")
-            },
+            }
             Expression::LambdaCall(to_call, args) => {
                 write!(f, "Lambda Call:\n").unwrap();
                 write!(f, "-to call:\n").unwrap();
-                write!(f, "{}",to_call).unwrap();
+                write!(f, "{}", to_call).unwrap();
 
                 write!(f, "-args:\n").unwrap();
-                for expr in args{
-                    write!(f, "     ->{}\n",expr).unwrap();
+                for expr in args {
+                    write!(f, "     ->{}\n", expr).unwrap();
                 }
                 write!(f, "\n")
-            },
-            Expression::Atom(atom) => write!(f, "Atom: {}\n",atom),
-            Expression::Identifier(ident) => write!(f, "Identifier: {}\n",ident),
+            }
+            Expression::Atom(atom) => write!(f, "Atom: {}\n", atom),
+            Expression::Identifier(ident) => write!(f, "Identifier: {}\n", ident),
         }
     }
- 
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -383,15 +389,18 @@ impl Display for AtomTypes {
             AtomTypes::Integer(to_display) => write!(f, "{}", to_display),
             AtomTypes::Symbol(to_display) => write!(f, "{}", to_display),
             AtomTypes::String(to_display) => write!(f, r#""{}""#, to_display),
-            AtomTypes::Boolean(to_display) => write!(f, "{}", if *to_display { "#t" }else{ "#f" }),
-            AtomTypes::List(to_display) => { 
+            AtomTypes::Boolean(to_display) => {
+                write!(f, "{}", if *to_display { "#t" } else { "#f" })
+            }
+            AtomTypes::List(to_display) => {
                 write!(f, "(").unwrap();
-                to_display.iter().for_each(|x| { write!(f,"{}",x).unwrap();});
+                to_display.iter().for_each(|x| {
+                    write!(f, "{}", x).unwrap();
+                });
                 write!(f, ")")
-            } ,
+            }
         }
     }
- 
 }
 
 #[cfg(test)]
@@ -447,12 +456,19 @@ mod parser_tests {
                             vec!["y".to_owned(), "z".to_owned()],
                             vec![LambdaCall(
                                 Rc::new(Identifier("list".to_owned())),
-                                vec![Identifier("x".to_owned()), Identifier("y".to_owned()),Identifier("z".to_owned())]
+                                vec![
+                                    Identifier("x".to_owned()),
+                                    Identifier("y".to_owned()),
+                                    Identifier("z".to_owned())
+                                ]
                             )]
                         )]
                     )
                 )],
-                vec![LambdaCall(Rc::new(Identifier("f".to_owned())),vec![Atom(Symbol("i".to_owned())),Atom(Symbol("am".to_owned()))])]
+                vec![LambdaCall(
+                    Rc::new(Identifier("f".to_owned())),
+                    vec![Atom(Symbol("i".to_owned())), Atom(Symbol("am".to_owned()))]
+                )]
             )
         )
     }
@@ -485,28 +501,90 @@ mod parser_tests {
 
         assert_eq!(
             parser.re_program(),
-            Programm::Expression(
-                vec![
-                    Define("add1".to_owned(), 
-                        Rc::new(Lambda(vec!["n".to_owned()], 
-                            vec![LambdaCall(Rc::new(Identifier("+".to_owned())), vec![Identifier("n".to_owned()), Atom(Integer(1))])]))), 
-                    Define("sub1".to_owned(), 
-                        Rc::new(Lambda(vec!["n".to_owned()], 
-                            vec![LambdaCall(Rc::new(Identifier("-".to_owned())), vec![Identifier("n".to_owned()), Atom(Integer(1))])]))), 
-                    Define("o+".to_owned(), 
-                        Rc::new(Lambda(vec!["a".to_owned(), "b".to_owned()], 
-                            vec![Cond(vec![
-                                (LambdaCall(Rc::new(Identifier("zero?".to_owned())), vec![Identifier("b".to_owned())]), Identifier("a".to_owned())), 
-                                (Atom(Boolean(true)), LambdaCall(Rc::new(Identifier("add1".to_owned())), vec![LambdaCall(Rc::new(Identifier("o+".to_string())), vec![Identifier("a".to_string()), LambdaCall(Rc::new(Identifier("sub1".to_owned())), vec![Identifier("b".to_owned())])])])
-                                )]
-                            )]
-                        ))
-                    ), 
-                    Define("o-".to_owned(), 
-                        Rc::new(Lambda(vec!["a".to_owned(), "b".to_owned()], 
-                            vec![Cond(vec![
-                                (LambdaCall(Rc::new(Identifier("zero?".to_owned())), vec![Identifier("b".to_owned())]), Identifier("a".to_owned())), 
-                                (Atom(Boolean(true)), LambdaCall(Rc::new(Identifier("sub1".to_owned())), vec![LambdaCall(Rc::new(Identifier("o-".to_owned())), vec![Identifier("a".to_owned()), LambdaCall(Rc::new(Identifier("sub1".to_owned())), vec![Identifier("b".to_owned())])])]))])])))]),
+            Programm::Expression(vec![
+                Define(
+                    "add1".to_owned(),
+                    Rc::new(Lambda(
+                        vec!["n".to_owned()],
+                        vec![LambdaCall(
+                            Rc::new(Identifier("+".to_owned())),
+                            vec![Identifier("n".to_owned()), Atom(Integer(1))]
+                        )]
+                    ))
+                ),
+                Define(
+                    "sub1".to_owned(),
+                    Rc::new(Lambda(
+                        vec!["n".to_owned()],
+                        vec![LambdaCall(
+                            Rc::new(Identifier("-".to_owned())),
+                            vec![Identifier("n".to_owned()), Atom(Integer(1))]
+                        )]
+                    ))
+                ),
+                Define(
+                    "o+".to_owned(),
+                    Rc::new(Lambda(
+                        vec!["a".to_owned(), "b".to_owned()],
+                        vec![Cond(vec![
+                            (
+                                LambdaCall(
+                                    Rc::new(Identifier("zero?".to_owned())),
+                                    vec![Identifier("b".to_owned())]
+                                ),
+                                Identifier("a".to_owned())
+                            ),
+                            (
+                                Atom(Boolean(true)),
+                                LambdaCall(
+                                    Rc::new(Identifier("add1".to_owned())),
+                                    vec![LambdaCall(
+                                        Rc::new(Identifier("o+".to_string())),
+                                        vec![
+                                            Identifier("a".to_string()),
+                                            LambdaCall(
+                                                Rc::new(Identifier("sub1".to_owned())),
+                                                vec![Identifier("b".to_owned())]
+                                            )
+                                        ]
+                                    )]
+                                )
+                            )
+                        ])]
+                    ))
+                ),
+                Define(
+                    "o-".to_owned(),
+                    Rc::new(Lambda(
+                        vec!["a".to_owned(), "b".to_owned()],
+                        vec![Cond(vec![
+                            (
+                                LambdaCall(
+                                    Rc::new(Identifier("zero?".to_owned())),
+                                    vec![Identifier("b".to_owned())]
+                                ),
+                                Identifier("a".to_owned())
+                            ),
+                            (
+                                Atom(Boolean(true)),
+                                LambdaCall(
+                                    Rc::new(Identifier("sub1".to_owned())),
+                                    vec![LambdaCall(
+                                        Rc::new(Identifier("o-".to_owned())),
+                                        vec![
+                                            Identifier("a".to_owned()),
+                                            LambdaCall(
+                                                Rc::new(Identifier("sub1".to_owned())),
+                                                vec![Identifier("b".to_owned())]
+                                            )
+                                        ]
+                                    )]
+                                )
+                            )
+                        ])]
+                    ))
+                )
+            ]),
         );
     }
 }
