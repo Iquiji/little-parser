@@ -1,7 +1,9 @@
+use core::fmt;
 use core::iter::Enumerate;
 use core::iter::Peekable;
 use core::str::Chars;
 use std::collections::HashMap;
+use std::fmt::Debug;
 
 #[cfg(test)]
 mod test {
@@ -207,7 +209,7 @@ mod test {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub enum ScannerTokenTypes {
     LeftParantheses,
     RightParantheses,
@@ -219,7 +221,7 @@ pub enum ScannerTokenTypes {
     EOF,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub enum KeywordEnum {
     Quote,
     Lambda,
@@ -229,11 +231,20 @@ pub enum KeywordEnum {
     Else,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct Token {
     pub ttype: ScannerTokenTypes,
     pub lexeme: String,
     pub line: u32,
+}
+impl Debug for Token {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Token: {:?} from '{:?}' on line {:?}",
+            self.ttype, self.lexeme, self.line
+        )
+    }
 }
 
 pub fn scan_to_token_list(in_str: &str) -> Vec<Token> {
