@@ -244,7 +244,7 @@ impl Parser {
                 Boolean => AtomTypes::Boolean(match self.current().lexeme.as_str() {
                     "#f" => false,
                     "#t" => true,
-                    _ => unreachable!(),
+                    x => panic!("invalid boolean state! found: {:?}", x),
                 }),
                 _ => unreachable!(),
             });
